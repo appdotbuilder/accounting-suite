@@ -1,21 +1,58 @@
+import { db } from '../db';
+import { transactionsTable } from '../db/schema';
 import { type UpdateTransactionInput, type Transaction } from '../schema';
+import { eq } from 'drizzle-orm';
 
-export async function updateTransaction(input: UpdateTransactionInput): Promise<Transaction> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is updating an existing financial transaction in the database.
-    // It should validate the transaction exists and update only the provided fields.
+export const updateTransaction = async (input: UpdateTransactionInput): Promise<Transaction> => {
+  try {
+    // First check if transaction exists
+    const existing = await db.select()
+      .from(transactionsTable)
+      .where(eq(transactionsTable.id, input.id))
+      .execute();
+
+    if (existing.length === 0) {
+      throw new Error(`Transaction with id ${input.id} not found`);
+    }
+
+    // Build update object with only provided fields
+    const updateData: any = {};
     
-    const transactionDate = input.date 
-        ? (typeof input.date === 'string' ? new Date(input.date) : input.date)
-        : new Date(); // Placeholder
+    if (input.date !== undefined) {
+      updateData.date = typeof input.date === 'string' ? new Date(input.date) : input.date;
+    }
     
-    return Promise.resolve({
-        id: input.id,
-        date: transactionDate,
-        description: input.description || 'Updated transaction',
-        amount: input.amount || 0,
-        type: input.type || 'Income',
-        category: input.category || 'Other',
-        created_at: new Date()
-    } as Transaction);
-}
+    if (input.description !== undefined) {
+      updateData.description = input.description;
+    }
+    
+    if (input.amount !== undefined) {
+      updateData.amount = input.amount.toString(); // Convert number to string for numeric column
+    }
+    
+    if (input.type !== undefined) {
+      updateData.type = input.type;
+    }
+    
+    if (input.category !== undefined) {
+      updateData.category = input.category;
+    }
+
+    // Update the transaction
+    const result = await db.update(transactionsTable)
+      .set(updateData)
+      .where(eq(transactionsTable.id, input.id))
+      .returning()
+      .execute();
+
+    // Convert numeric fields back to numbers before returning
+    const transaction = result[0];
+    return {
+      ...transaction,
+      amount: parseFloat(transaction.amount) // Convert string back to number
+    };
+  } catch (error) {
+    console.error('Transaction update failed:', error);
+    throw error;
+  }
+};

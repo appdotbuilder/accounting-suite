@@ -1,7 +1,27 @@
+import { db } from '../db';
+import { inventoryItemsTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
 export async function deleteInventoryItem(id: number): Promise<{ success: boolean }> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is deleting an inventory item from the database.
-    // It should validate the item exists before deletion.
-    
-    return Promise.resolve({ success: true });
+  try {
+    // First, check if the inventory item exists
+    const existingItem = await db.select()
+      .from(inventoryItemsTable)
+      .where(eq(inventoryItemsTable.id, id))
+      .execute();
+
+    if (existingItem.length === 0) {
+      throw new Error(`Inventory item with id ${id} not found`);
+    }
+
+    // Delete the inventory item
+    const result = await db.delete(inventoryItemsTable)
+      .where(eq(inventoryItemsTable.id, id))
+      .execute();
+
+    return { success: true };
+  } catch (error) {
+    console.error('Inventory item deletion failed:', error);
+    throw error;
+  }
 }

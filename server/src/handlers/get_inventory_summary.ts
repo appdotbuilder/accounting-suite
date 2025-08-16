@@ -1,14 +1,46 @@
+import { db } from '../db';
+import { inventoryItemsTable } from '../db/schema';
 import { type InventoryReportInput, type InventorySummary } from '../schema';
+import { lte, sql } from 'drizzle-orm';
 
 export async function getInventorySummary(input: InventoryReportInput): Promise<InventorySummary> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is generating an inventory summary report.
-    // It should calculate total items, total inventory value, and identify low stock items.
-    
-    return Promise.resolve({
-        totalItems: 0, // Placeholder - should count all inventory items
-        totalValue: 0, // Placeholder - should sum (quantity * unitCost) for all items
-        lowStockItems: [], // Placeholder - should return items with quantity <= threshold
-        lowStockThreshold: input.lowStockThreshold
-    } as InventorySummary);
+  try {
+    // Get all inventory items
+    const allItems = await db.select()
+      .from(inventoryItemsTable)
+      .execute();
+
+    // Calculate total items count
+    const totalItems = allItems.length;
+
+    // Calculate total inventory value (quantity * unitCost for each item)
+    const totalValue = allItems.reduce((sum, item) => {
+      const quantity = item.quantity;
+      const unitCost = parseFloat(item.unitCost); // Convert numeric to number
+      return sum + (quantity * unitCost);
+    }, 0);
+
+    // Find low stock items (quantity <= threshold)
+    const lowStockItems = await db.select()
+      .from(inventoryItemsTable)
+      .where(lte(inventoryItemsTable.quantity, input.lowStockThreshold))
+      .execute();
+
+    // Convert numeric fields to numbers for low stock items
+    const convertedLowStockItems = lowStockItems.map(item => ({
+      ...item,
+      unitCost: parseFloat(item.unitCost),
+      sellingPrice: parseFloat(item.sellingPrice)
+    }));
+
+    return {
+      totalItems,
+      totalValue,
+      lowStockItems: convertedLowStockItems,
+      lowStockThreshold: input.lowStockThreshold
+    };
+  } catch (error) {
+    console.error('Inventory summary generation failed:', error);
+    throw error;
+  }
 }

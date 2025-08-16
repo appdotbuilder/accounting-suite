@@ -1,20 +1,58 @@
+import { db } from '../db';
+import { transactionsTable } from '../db/schema';
 import { type FinancialReportInput, type FinancialSummary } from '../schema';
+import { eq, and, gte, lte, sum } from 'drizzle-orm';
 
 export async function getFinancialSummary(input: FinancialReportInput): Promise<FinancialSummary> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is generating a financial summary report for a given date range.
-    // It should calculate total income, total expenses, and net profit from transactions within the period.
-    
+  try {
+    // Convert dates to proper Date objects
     const startDate = typeof input.startDate === 'string' ? new Date(input.startDate) : input.startDate;
     const endDate = typeof input.endDate === 'string' ? new Date(input.endDate) : input.endDate;
-    
-    return Promise.resolve({
-        totalIncome: 0, // Placeholder - should sum all Income transactions in period
-        totalExpenses: 0, // Placeholder - should sum all Expense transactions in period
-        netProfit: 0, // Placeholder - should be totalIncome - totalExpenses
-        period: {
-            startDate,
-            endDate
-        }
-    } as FinancialSummary);
+
+    // Build date range conditions
+    const dateConditions = and(
+      gte(transactionsTable.date, startDate),
+      lte(transactionsTable.date, endDate)
+    );
+
+    // Get total income (sum of all Income transactions in date range)
+    const incomeResult = await db.select({
+      total: sum(transactionsTable.amount)
+    })
+      .from(transactionsTable)
+      .where(and(
+        dateConditions,
+        eq(transactionsTable.type, 'Income')
+      ))
+      .execute();
+
+    // Get total expenses (sum of all Expense transactions in date range)
+    const expenseResult = await db.select({
+      total: sum(transactionsTable.amount)
+    })
+      .from(transactionsTable)
+      .where(and(
+        dateConditions,
+        eq(transactionsTable.type, 'Expense')
+      ))
+      .execute();
+
+    // Extract totals and convert from string to number (numeric columns return strings)
+    const totalIncome = incomeResult[0]?.total ? parseFloat(incomeResult[0].total) : 0;
+    const totalExpenses = expenseResult[0]?.total ? parseFloat(expenseResult[0].total) : 0;
+    const netProfit = totalIncome - totalExpenses;
+
+    return {
+      totalIncome,
+      totalExpenses,
+      netProfit,
+      period: {
+        startDate,
+        endDate
+      }
+    };
+  } catch (error) {
+    console.error('Financial summary calculation failed:', error);
+    throw error;
+  }
 }
