@@ -11,6 +11,17 @@ import { trpc } from '@/utils/trpc';
 import { Plus, Edit, Trash2, Package, AlertTriangle, AlertCircle, DollarSign, Boxes, TrendingUp } from 'lucide-react';
 import type { InventoryItem, CreateInventoryItemInput, UpdateInventoryItemInput } from '../../../server/src/schema';
 
+// Format currency to Indonesian Rupiah
+function formatRupiah(amount: number): string {
+  if (amount % 1 === 0) {
+    return `Rp ${amount.toLocaleString('id-ID')}`;
+  }
+  return `Rp ${amount.toLocaleString('id-ID', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+}
+
 export function InventoryManager() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +47,7 @@ export function InventoryManager() {
       const data = await trpc.getInventoryItems.query();
       setInventoryItems(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load inventory items');
+      setError(err instanceof Error ? err.message : 'Gagal memuat barang inventori');
       console.error('Failed to load inventory items:', err);
     } finally {
       setIsLoading(false);
@@ -75,9 +86,9 @@ export function InventoryManager() {
         sellingPrice: 0
       });
       setIsCreateDialogOpen(false);
-      showMessage('✅ Inventory item created successfully!');
+      showMessage('✅ Barang inventori berhasil dibuat!');
     } catch (err) {
-      showMessage(err instanceof Error ? err.message : 'Failed to create inventory item', true);
+      showMessage(err instanceof Error ? err.message : 'Gagal membuat barang inventori', true);
     } finally {
       setIsLoading(false);
     }
@@ -101,16 +112,16 @@ export function InventoryManager() {
       setIsEditDialogOpen(false);
       setEditingItem(null);
       setEditFormData({});
-      showMessage('✅ Inventory item updated successfully!');
+      showMessage('✅ Barang inventori berhasil diperbarui!');
     } catch (err) {
-      showMessage(err instanceof Error ? err.message : 'Failed to update inventory item', true);
+      showMessage(err instanceof Error ? err.message : 'Gagal memperbarui barang inventori', true);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeleteItem = async (id: number, itemName: string) => {
-    if (!confirm(`Are you sure you want to delete "${itemName}" from inventory? This action cannot be undone.`)) {
+    if (!confirm(`Apakah Anda yakin ingin menghapus "${itemName}" dari inventori? Tindakan ini tidak dapat dibatalkan.`)) {
       return;
     }
 
@@ -118,9 +129,9 @@ export function InventoryManager() {
     try {
       await trpc.deleteInventoryItem.mutate({ id });
       setInventoryItems((prev: InventoryItem[]) => prev.filter((item: InventoryItem) => item.id !== id));
-      showMessage('🗑️ Inventory item deleted successfully!');
+      showMessage('🗑️ Barang inventori berhasil dihapus!');
     } catch (err) {
-      showMessage(err instanceof Error ? err.message : 'Failed to delete inventory item', true);
+      showMessage(err instanceof Error ? err.message : 'Gagal menghapus barang inventori', true);
     } finally {
       setIsLoading(false);
     }
@@ -166,45 +177,45 @@ export function InventoryManager() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-800">📦 Total Items</CardTitle>
+            <CardTitle className="text-sm font-medium text-blue-800">📦 Total Barang</CardTitle>
             <Package className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-900">{totalItems}</div>
-            <p className="text-xs text-blue-700">Different products</p>
+            <p className="text-xs text-blue-700">Produk berbeda</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-800">🔢 Total Quantity</CardTitle>
+            <CardTitle className="text-sm font-medium text-purple-800">🔢 Total Kuantitas</CardTitle>
             <Boxes className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-900">{totalQuantity}</div>
-            <p className="text-xs text-purple-700">Units in stock</p>
+            <p className="text-xs text-purple-700">Unit dalam stok</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">💰 Total Value</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-800">💰 Total Nilai</CardTitle>
             <DollarSign className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-900">${totalValue.toFixed(2)}</div>
-            <p className="text-xs text-green-700">Investment cost</p>
+            <div className="text-2xl font-bold text-green-900">{formatRupiah(totalValue)}</div>
+            <p className="text-xs text-green-700">Biaya investasi</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-yellow-800">📈 Potential Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-yellow-800">📈 Potensi Pendapatan</CardTitle>
             <TrendingUp className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-900">${totalPotentialRevenue.toFixed(2)}</div>
-            <p className="text-xs text-yellow-700">If all sold</p>
+            <div className="text-2xl font-bold text-yellow-900">{formatRupiah(totalPotentialRevenue)}</div>
+            <p className="text-xs text-yellow-700">Jika semua terjual</p>
           </CardContent>
         </Card>
       </div>
@@ -214,37 +225,37 @@ export function InventoryManager() {
         <Alert className="border-orange-200 bg-orange-50">
           <AlertTriangle className="h-4 w-4 text-orange-600" />
           <AlertDescription className="text-orange-800">
-            ⚠️ <strong>{lowStockItems.length} item{lowStockItems.length !== 1 ? 's' : ''}</strong> running low on stock (≤ 10 units).
-            Consider restocking: {lowStockItems.slice(0, 3).map((item: InventoryItem) => item.itemName).join(', ')}
-            {lowStockItems.length > 3 && ` and ${lowStockItems.length - 3} more`}
+            ⚠️ <strong>{lowStockItems.length} barang</strong> stoknya hampir habis (≤ 10 unit).
+            Pertimbangkan untuk restock: {lowStockItems.slice(0, 3).map((item: InventoryItem) => item.itemName).join(', ')}
+            {lowStockItems.length > 3 && ` dan ${lowStockItems.length - 3} lainnya`}
           </AlertDescription>
         </Alert>
       )}
 
       {/* Actions */}
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">📋 Inventory Items</h3>
+        <h3 className="text-lg font-semibold">📋 Barang Inventori</h3>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-blue-600 hover:bg-blue-700">
               <Plus className="h-4 w-4 mr-2" />
-              Add Item
+              Tambah Barang
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <form onSubmit={handleCreateItem}>
               <DialogHeader>
-                <DialogTitle>➕ Add New Inventory Item</DialogTitle>
+                <DialogTitle>➕ Tambah Barang Inventori Baru</DialogTitle>
                 <DialogDescription>
-                  Add a new product to your inventory
+                  Tambahkan produk baru ke inventori Anda
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="create-itemName">Item Name</Label>
+                  <Label htmlFor="create-itemName">Nama Barang</Label>
                   <Input
                     id="create-itemName"
-                    placeholder="e.g., Product A, Office Chair"
+                    placeholder="cth., Produk A, Kursi Kantor"
                     value={createFormData.itemName}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setCreateFormData((prev: CreateInventoryItemInput) => ({ ...prev, itemName: e.target.value }))
@@ -256,7 +267,7 @@ export function InventoryManager() {
                   <Label htmlFor="create-sku">SKU</Label>
                   <Input
                     id="create-sku"
-                    placeholder="e.g., PROD-001, CHAIR-BLK"
+                    placeholder="cth., PROD-001, CHAIR-BLK"
                     value={createFormData.sku}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setCreateFormData((prev: CreateInventoryItemInput) => ({ ...prev, sku: e.target.value }))
@@ -265,7 +276,7 @@ export function InventoryManager() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="create-quantity">Quantity</Label>
+                  <Label htmlFor="create-quantity">Kuantitas</Label>
                   <Input
                     id="create-quantity"
                     type="number"
@@ -279,7 +290,7 @@ export function InventoryManager() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="create-unitCost">Unit Cost ($)</Label>
+                  <Label htmlFor="create-unitCost">Biaya per Unit (Rp)</Label>
                   <Input
                     id="create-unitCost"
                     type="number"
@@ -294,7 +305,7 @@ export function InventoryManager() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="create-sellingPrice">Selling Price ($)</Label>
+                  <Label htmlFor="create-sellingPrice">Harga Jual (Rp)</Label>
                   <Input
                     id="create-sellingPrice"
                     type="number"
@@ -311,10 +322,10 @@ export function InventoryManager() {
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
+                  Batal
                 </Button>
                 <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Creating...' : 'Create Item'}
+                  {isLoading ? 'Membuat...' : 'Buat Barang'}
                 </Button>
               </DialogFooter>
             </form>
@@ -327,8 +338,8 @@ export function InventoryManager() {
         <CardHeader>
           <CardDescription>
             {inventoryItems.length === 0 
-              ? "No inventory items yet. Start by adding your first product!" 
-              : `Showing ${inventoryItems.length} item${inventoryItems.length !== 1 ? 's' : ''}`
+              ? "Belum ada barang inventori. Mulai dengan menambahkan produk pertama Anda!" 
+              : `Menampilkan ${inventoryItems.length} barang`
             }
           </CardDescription>
         </CardHeader>
@@ -336,22 +347,22 @@ export function InventoryManager() {
           {inventoryItems.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg mb-2">📦 No inventory items yet</p>
-              <p className="text-sm">Click "Add Item" to start building your product catalog!</p>
+              <p className="text-lg mb-2">📦 Belum ada barang inventori</p>
+              <p className="text-sm">Klik "Tambah Barang" untuk mulai membangun katalog produk Anda!</p>
             </div>
           ) : (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Item Name</TableHead>
+                    <TableHead>Nama Barang</TableHead>
                     <TableHead>SKU</TableHead>
-                    <TableHead className="text-center">Quantity</TableHead>
-                    <TableHead className="text-right">Unit Cost</TableHead>
-                    <TableHead className="text-right">Selling Price</TableHead>
-                    <TableHead className="text-right">Total Value</TableHead>
-                    <TableHead className="text-right">Profit Margin</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-center">Kuantitas</TableHead>
+                    <TableHead className="text-right">Biaya per Unit</TableHead>
+                    <TableHead className="text-right">Harga Jual</TableHead>
+                    <TableHead className="text-right">Total Nilai</TableHead>
+                    <TableHead className="text-right">Margin Keuntungan</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -367,7 +378,7 @@ export function InventoryManager() {
                           <div>
                             <p className="font-medium">{item.itemName}</p>
                             <p className="text-xs text-gray-500">
-                              Added: {item.created_at.toLocaleDateString()}
+                              Ditambahkan: {item.created_at.toLocaleDateString('id-ID')}
                             </p>
                           </div>
                         </TableCell>
@@ -385,13 +396,13 @@ export function InventoryManager() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-mono">
-                          ${item.unitCost.toFixed(2)}
+                          {formatRupiah(item.unitCost)}
                         </TableCell>
                         <TableCell className="text-right font-mono">
-                          ${item.sellingPrice.toFixed(2)}
+                          {formatRupiah(item.sellingPrice)}
                         </TableCell>
                         <TableCell className="text-right font-bold">
-                          ${totalValue.toFixed(2)}
+                          {formatRupiah(totalValue)}
                         </TableCell>
                         <TableCell className="text-right">
                           <Badge 
@@ -439,14 +450,14 @@ export function InventoryManager() {
         <DialogContent className="sm:max-w-md">
           <form onSubmit={handleEditItem}>
             <DialogHeader>
-              <DialogTitle>✏️ Edit Inventory Item</DialogTitle>
+              <DialogTitle>✏️ Edit Barang Inventori</DialogTitle>
               <DialogDescription>
-                Update inventory item details
+                Perbarui detail barang inventori
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="edit-itemName">Item Name</Label>
+                <Label htmlFor="edit-itemName">Nama Barang</Label>
                 <Input
                   id="edit-itemName"
                   value={editFormData.itemName || ''}
@@ -466,7 +477,7 @@ export function InventoryManager() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-quantity">Quantity</Label>
+                <Label htmlFor="edit-quantity">Kuantitas</Label>
                 <Input
                   id="edit-quantity"
                   type="number"
@@ -478,7 +489,7 @@ export function InventoryManager() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-unitCost">Unit Cost ($)</Label>
+                <Label htmlFor="edit-unitCost">Biaya per Unit (Rp)</Label>
                 <Input
                   id="edit-unitCost"
                   type="number"
@@ -491,7 +502,7 @@ export function InventoryManager() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-sellingPrice">Selling Price ($)</Label>
+                <Label htmlFor="edit-sellingPrice">Harga Jual (Rp)</Label>
                 <Input
                   id="edit-sellingPrice"
                   type="number"
@@ -506,10 +517,10 @@ export function InventoryManager() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancel
+                Batal
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Updating...' : 'Update Item'}
+                {isLoading ? 'Memperbarui...' : 'Perbarui Barang'}
               </Button>
             </DialogFooter>
           </form>

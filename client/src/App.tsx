@@ -16,10 +16,10 @@ function App() {
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-3">
             <Calculator className="h-10 w-10 text-indigo-600" />
-            📊 Business Accounting Suite
+            📊 Sistem Akuntansi Bisnis
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Comprehensive financial tracking, inventory management, and business reporting in one place
+            Pelacakan keuangan komprehensif, manajemen inventori, dan pelaporan bisnis dalam satu tempat
           </p>
         </header>
 
@@ -27,19 +27,19 @@ function App() {
           <TabsList className="grid w-full grid-cols-4 mb-8 bg-white shadow-lg border">
             <TabsTrigger value="dashboard" className="flex items-center gap-2 p-4">
               <TrendingUp className="h-4 w-4" />
-              Dashboard
+              Dasbor
             </TabsTrigger>
             <TabsTrigger value="transactions" className="flex items-center gap-2 p-4">
               <DollarSign className="h-4 w-4" />
-              Transactions
+              Transaksi
             </TabsTrigger>
             <TabsTrigger value="inventory" className="flex items-center gap-2 p-4">
               <Package className="h-4 w-4" />
-              Inventory
+              Inventori
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2 p-4">
               <Calculator className="h-4 w-4" />
-              Reports
+              Laporan
             </TabsTrigger>
           </TabsList>
 
@@ -52,10 +52,10 @@ function App() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="h-6 w-6 text-green-600" />
-                  💰 Financial Transactions
+                  💰 Transaksi Keuangan
                 </CardTitle>
                 <CardDescription>
-                  Track your income and expenses, categorize transactions, and monitor cash flow
+                  Lacak pendapatan dan pengeluaran, kategorikan transaksi, dan pantau arus kas
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -69,10 +69,10 @@ function App() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="h-6 w-6 text-blue-600" />
-                  📦 Inventory Management
+                  📦 Manajemen Inventori
                 </CardTitle>
                 <CardDescription>
-                  Manage your business inventory, track stock levels, and monitor item costs
+                  Kelola inventori bisnis, lacak level stok, dan pantau biaya barang
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -86,10 +86,10 @@ function App() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calculator className="h-6 w-6 text-purple-600" />
-                  📈 Financial Reports
+                  📈 Laporan Keuangan
                 </CardTitle>
                 <CardDescription>
-                  Generate comprehensive reports and analyze your business performance
+                  Buat laporan komprehensif dan analisis performa bisnis Anda
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -101,7 +101,7 @@ function App() {
 
         <footer className="text-center mt-12 text-gray-500">
           <p className="text-sm">
-            Built with modern web technologies • Real-time data tracking • Professional reporting
+            Dibuat dengan teknologi web modern • Pelacakan data real-time • Pelaporan profesional
           </p>
         </footer>
       </div>

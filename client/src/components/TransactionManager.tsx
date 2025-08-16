@@ -18,6 +18,32 @@ const TRANSACTION_CATEGORIES: TransactionCategory[] = [
   'Equipment', 'Insurance', 'Office Supplies', 'Travel', 'Other'
 ];
 
+// Indonesian category names mapping
+const CATEGORY_NAMES: Record<TransactionCategory, string> = {
+  'Sales': 'Penjualan',
+  'Rent': 'Sewa',
+  'Utilities': 'Utilitas',
+  'Purchases': 'Pembelian',
+  'Salaries': 'Gaji',
+  'Marketing': 'Pemasaran',
+  'Equipment': 'Peralatan',
+  'Insurance': 'Asuransi',
+  'Office Supplies': 'Perlengkapan Kantor',
+  'Travel': 'Perjalanan',
+  'Other': 'Lainnya'
+};
+
+// Format currency to Indonesian Rupiah
+function formatRupiah(amount: number): string {
+  if (amount % 1 === 0) {
+    return `Rp ${amount.toLocaleString('id-ID')}`;
+  }
+  return `Rp ${amount.toLocaleString('id-ID', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+}
+
 export function TransactionManager() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +69,7 @@ export function TransactionManager() {
       const data = await trpc.getTransactions.query();
       setTransactions(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load transactions');
+      setError(err instanceof Error ? err.message : 'Gagal memuat transaksi');
       console.error('Failed to load transactions:', err);
     } finally {
       setIsLoading(false);
@@ -82,9 +108,9 @@ export function TransactionManager() {
         category: 'Sales'
       });
       setIsCreateDialogOpen(false);
-      showMessage('✅ Transaction created successfully!');
+      showMessage('✅ Transaksi berhasil dibuat!');
     } catch (err) {
-      showMessage(err instanceof Error ? err.message : 'Failed to create transaction', true);
+      showMessage(err instanceof Error ? err.message : 'Gagal membuat transaksi', true);
     } finally {
       setIsLoading(false);
     }
@@ -108,16 +134,16 @@ export function TransactionManager() {
       setIsEditDialogOpen(false);
       setEditingTransaction(null);
       setEditFormData({});
-      showMessage('✅ Transaction updated successfully!');
+      showMessage('✅ Transaksi berhasil diperbarui!');
     } catch (err) {
-      showMessage(err instanceof Error ? err.message : 'Failed to update transaction', true);
+      showMessage(err instanceof Error ? err.message : 'Gagal memperbarui transaksi', true);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeleteTransaction = async (id: number, description: string) => {
-    if (!confirm(`Are you sure you want to delete the transaction "${description}"? This action cannot be undone.`)) {
+    if (!confirm(`Apakah Anda yakin ingin menghapus transaksi "${description}"? Tindakan ini tidak dapat dibatalkan.`)) {
       return;
     }
 
@@ -125,9 +151,9 @@ export function TransactionManager() {
     try {
       await trpc.deleteTransaction.mutate({ id });
       setTransactions((prev: Transaction[]) => prev.filter((t: Transaction) => t.id !== id));
-      showMessage('🗑️ Transaction deleted successfully!');
+      showMessage('🗑️ Transaksi berhasil dihapus!');
     } catch (err) {
-      showMessage(err instanceof Error ? err.message : 'Failed to delete transaction', true);
+      showMessage(err instanceof Error ? err.message : 'Gagal menghapus transaksi', true);
     } finally {
       setIsLoading(false);
     }
@@ -177,32 +203,32 @@ export function TransactionManager() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">💰 Total Income</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-800">💰 Total Pemasukan</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-900">${totalIncome.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-green-900">{formatRupiah(totalIncome)}</div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-red-800">💸 Total Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium text-red-800">💸 Total Pengeluaran</CardTitle>
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-900">${totalExpenses.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-red-900">{formatRupiah(totalExpenses)}</div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-800">📊 Net Profit</CardTitle>
+            <CardTitle className="text-sm font-medium text-blue-800">📊 Laba Bersih</CardTitle>
             <DollarSign className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-900' : 'text-red-900'}`}>
-              ${netProfit.toFixed(2)}
+              {formatRupiah(netProfit)}
             </div>
           </CardContent>
         </Card>
@@ -210,25 +236,25 @@ export function TransactionManager() {
 
       {/* Actions */}
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">📋 Transaction History</h3>
+        <h3 className="text-lg font-semibold">📋 Riwayat Transaksi</h3>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-green-600 hover:bg-green-700">
               <Plus className="h-4 w-4 mr-2" />
-              Add Transaction
+              Tambah Transaksi
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <form onSubmit={handleCreateTransaction}>
               <DialogHeader>
-                <DialogTitle>➕ Add New Transaction</DialogTitle>
+                <DialogTitle>➕ Tambah Transaksi Baru</DialogTitle>
                 <DialogDescription>
-                  Record a new income or expense transaction
+                  Catat transaksi pemasukan atau pengeluaran baru
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="create-date">Date</Label>
+                  <Label htmlFor="create-date">Tanggal</Label>
                   <Input
                     id="create-date"
                     type="date"
@@ -240,10 +266,10 @@ export function TransactionManager() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="create-description">Description</Label>
+                  <Label htmlFor="create-description">Deskripsi</Label>
                   <Input
                     id="create-description"
-                    placeholder="e.g., Sales revenue, Office supplies"
+                    placeholder="cth., Pendapatan penjualan, Pembelian perlengkapan kantor"
                     value={createFormData.description}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setCreateFormData((prev: CreateTransactionInput) => ({ ...prev, description: e.target.value }))
@@ -252,7 +278,7 @@ export function TransactionManager() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="create-amount">Amount ($)</Label>
+                  <Label htmlFor="create-amount">Jumlah (Rp)</Label>
                   <Input
                     id="create-amount"
                     type="number"
@@ -267,7 +293,7 @@ export function TransactionManager() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="create-type">Type</Label>
+                  <Label htmlFor="create-type">Jenis</Label>
                   <Select
                     value={createFormData.type}
                     onValueChange={(value: TransactionType) =>
@@ -278,13 +304,13 @@ export function TransactionManager() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Income">💰 Income</SelectItem>
-                      <SelectItem value="Expense">💸 Expense</SelectItem>
+                      <SelectItem value="Income">💰 Pemasukan</SelectItem>
+                      <SelectItem value="Expense">💸 Pengeluaran</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="create-category">Category</Label>
+                  <Label htmlFor="create-category">Kategori</Label>
                   <Select
                     value={createFormData.category}
                     onValueChange={(value: TransactionCategory) =>
@@ -296,7 +322,7 @@ export function TransactionManager() {
                     </SelectTrigger>
                     <SelectContent>
                       {TRANSACTION_CATEGORIES.map((category: TransactionCategory) => (
-                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                        <SelectItem key={category} value={category}>{CATEGORY_NAMES[category]}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -304,10 +330,10 @@ export function TransactionManager() {
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
+                  Batal
                 </Button>
                 <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Creating...' : 'Create Transaction'}
+                  {isLoading ? 'Membuat...' : 'Buat Transaksi'}
                 </Button>
               </DialogFooter>
             </form>
@@ -320,8 +346,8 @@ export function TransactionManager() {
         <CardHeader>
           <CardDescription>
             {transactions.length === 0 
-              ? "No transactions yet. Start by adding your first transaction!" 
-              : `Showing ${transactions.length} transaction${transactions.length !== 1 ? 's' : ''}`
+              ? "Belum ada transaksi. Mulai dengan menambahkan transaksi pertama Anda!" 
+              : `Menampilkan ${transactions.length} transaksi`
             }
           </CardDescription>
         </CardHeader>
@@ -329,50 +355,50 @@ export function TransactionManager() {
           {transactions.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg mb-2">📊 No transactions recorded yet</p>
-              <p className="text-sm">Click "Add Transaction" to get started with tracking your finances!</p>
+              <p className="text-lg mb-2">📊 Belum ada transaksi tercatat</p>
+              <p className="text-sm">Klik "Tambah Transaksi" untuk mulai melacak keuangan Anda!</p>
             </div>
           ) : (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Tanggal</TableHead>
+                    <TableHead>Deskripsi</TableHead>
+                    <TableHead>Kategori</TableHead>
+                    <TableHead>Jenis</TableHead>
+                    <TableHead className="text-right">Jumlah</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {transactions.map((transaction: Transaction) => (
                     <TableRow key={transaction.id}>
                       <TableCell className="font-medium">
-                        {transaction.date.toLocaleDateString()}
+                        {transaction.date.toLocaleDateString('id-ID')}
                       </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{transaction.description}</p>
                           <p className="text-xs text-gray-500">
-                            Added: {transaction.created_at.toLocaleDateString()}
+                            Ditambahkan: {transaction.created_at.toLocaleDateString('id-ID')}
                           </p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{transaction.category}</Badge>
+                        <Badge variant="outline">{CATEGORY_NAMES[transaction.category]}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge 
                           variant={transaction.type === 'Income' ? 'default' : 'destructive'}
                           className={transaction.type === 'Income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
                         >
-                          {transaction.type === 'Income' ? '📈' : '📉'} {transaction.type}
+                          {transaction.type === 'Income' ? '📈' : '📉'} {transaction.type === 'Income' ? 'Pemasukan' : 'Pengeluaran'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-bold">
                         <span className={transaction.type === 'Income' ? 'text-green-600' : 'text-red-600'}>
-                          {transaction.type === 'Income' ? '+' : '-'}${transaction.amount.toFixed(2)}
+                          {transaction.type === 'Income' ? '+' : '-'}{formatRupiah(transaction.amount)}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
@@ -408,14 +434,14 @@ export function TransactionManager() {
         <DialogContent className="sm:max-w-md">
           <form onSubmit={handleEditTransaction}>
             <DialogHeader>
-              <DialogTitle>✏️ Edit Transaction</DialogTitle>
+              <DialogTitle>✏️ Edit Transaksi</DialogTitle>
               <DialogDescription>
-                Update transaction details
+                Perbarui detail transaksi
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="edit-date">Date</Label>
+                <Label htmlFor="edit-date">Tanggal</Label>
                 <Input
                   id="edit-date"
                   type="date"
@@ -426,7 +452,7 @@ export function TransactionManager() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-description">Description</Label>
+                <Label htmlFor="edit-description">Deskripsi</Label>
                 <Input
                   id="edit-description"
                   value={editFormData.description || ''}
@@ -436,7 +462,7 @@ export function TransactionManager() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-amount">Amount ($)</Label>
+                <Label htmlFor="edit-amount">Jumlah (Rp)</Label>
                 <Input
                   id="edit-amount"
                   type="number"
@@ -449,7 +475,7 @@ export function TransactionManager() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-type">Type</Label>
+                <Label htmlFor="edit-type">Jenis</Label>
                 <Select
                   value={editFormData.type || ''}
                   onValueChange={(value: TransactionType) =>
@@ -460,13 +486,13 @@ export function TransactionManager() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Income">💰 Income</SelectItem>
-                    <SelectItem value="Expense">💸 Expense</SelectItem>
+                    <SelectItem value="Income">💰 Pemasukan</SelectItem>
+                    <SelectItem value="Expense">💸 Pengeluaran</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-category">Category</Label>
+                <Label htmlFor="edit-category">Kategori</Label>
                 <Select
                   value={editFormData.category || ''}
                   onValueChange={(value: TransactionCategory) =>
@@ -478,7 +504,7 @@ export function TransactionManager() {
                   </SelectTrigger>
                   <SelectContent>
                     {TRANSACTION_CATEGORIES.map((category: TransactionCategory) => (
-                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                      <SelectItem key={category} value={category}>{CATEGORY_NAMES[category]}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -486,10 +512,10 @@ export function TransactionManager() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancel
+                Batal
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Updating...' : 'Update Transaction'}
+                {isLoading ? 'Memperbarui...' : 'Perbarui Transaksi'}
               </Button>
             </DialogFooter>
           </form>

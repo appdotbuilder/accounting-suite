@@ -1,24 +1,24 @@
 import { db } from '../db';
 import { inventoryItemsTable } from '../db/schema';
-import { type InventoryItem } from '../schema';
 import { asc } from 'drizzle-orm';
+import type { InventoryItem } from '../schema';
 
 export const getInventoryItems = async (): Promise<InventoryItem[]> => {
   try {
-    // Fetch all inventory items ordered by item name
     const results = await db.select()
       .from(inventoryItemsTable)
       .orderBy(asc(inventoryItemsTable.itemName))
       .execute();
 
-    // Convert numeric fields back to numbers before returning
     return results.map(item => ({
       ...item,
-      unitCost: parseFloat(item.unitCost),
-      sellingPrice: parseFloat(item.sellingPrice)
+      unitCost: parseFloat(item.unitCost), // Convert string back to number
+      sellingPrice: parseFloat(item.sellingPrice), // Convert string back to number
+      created_at: new Date(item.created_at),
+      updated_at: new Date(item.updated_at)
     }));
   } catch (error) {
-    console.error('Failed to fetch inventory items:', error);
+    console.error('Get inventory items failed:', error);
     throw error;
   }
 };

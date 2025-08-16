@@ -1,23 +1,23 @@
 import { db } from '../db';
 import { transactionsTable } from '../db/schema';
-import { type Transaction } from '../schema';
 import { desc } from 'drizzle-orm';
+import type { Transaction } from '../schema';
 
-export async function getTransactions(): Promise<Transaction[]> {
+export const getTransactions = async (): Promise<Transaction[]> => {
   try {
-    // Query transactions ordered by date (most recent first)
     const results = await db.select()
       .from(transactionsTable)
-      .orderBy(desc(transactionsTable.date))
+      .orderBy(desc(transactionsTable.date), desc(transactionsTable.created_at))
       .execute();
 
-    // Convert numeric fields to numbers for proper type compliance
     return results.map(transaction => ({
       ...transaction,
-      amount: parseFloat(transaction.amount) // Convert numeric column to number
+      amount: parseFloat(transaction.amount), // Convert string back to number
+      date: new Date(transaction.date),
+      created_at: new Date(transaction.created_at)
     }));
   } catch (error) {
-    console.error('Failed to fetch transactions:', error);
+    console.error('Get transactions failed:', error);
     throw error;
   }
-}
+};

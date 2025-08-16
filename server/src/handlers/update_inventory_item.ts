@@ -1,62 +1,55 @@
 import { db } from '../db';
 import { inventoryItemsTable } from '../db/schema';
-import { type UpdateInventoryItemInput, type InventoryItem } from '../schema';
-import { eq, and, ne } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
+import type { UpdateInventoryItemInput, InventoryItem } from '../schema';
 
 export const updateInventoryItem = async (input: UpdateInventoryItemInput): Promise<InventoryItem> => {
   try {
-    // Check if the item exists
-    const existingItem = await db.select()
-      .from(inventoryItemsTable)
-      .where(eq(inventoryItemsTable.id, input.id))
-      .execute();
-
-    if (existingItem.length === 0) {
-      throw new Error(`Inventory item with id ${input.id} not found`);
+    const updateData: any = {};
+    
+    if (input.itemName !== undefined) {
+      updateData.itemName = input.itemName;
     }
-
-    // If SKU is being updated, check for uniqueness
-    if (input.sku) {
-      const skuConflict = await db.select()
-        .from(inventoryItemsTable)
-        .where(and(
-          eq(inventoryItemsTable.sku, input.sku),
-          ne(inventoryItemsTable.id, input.id)
-        ))
-        .execute();
-
-      if (skuConflict.length > 0) {
-        throw new Error(`SKU ${input.sku} already exists for another item`);
-      }
+    if (input.sku !== undefined) {
+      updateData.sku = input.sku;
     }
+    if (input.quantity !== undefined) {
+      updateData.quantity = input.quantity;
+    }
+    if (input.unitCost !== undefined) {
+      updateData.unitCost = input.unitCost.toString(); // Convert number to string
+    }
+    if (input.sellingPrice !== undefined) {
+      updateData.sellingPrice = input.sellingPrice.toString(); // Convert number to string
+    }
+    
+    // Always update the updated_at timestamp
+    updateData.updated_at = new Date();
 
-    // Prepare update values - only include fields that are being updated
-    const updateValues: any = {
-      updated_at: new Date()
-    };
-
-    if (input.itemName !== undefined) updateValues.itemName = input.itemName;
-    if (input.sku !== undefined) updateValues.sku = input.sku;
-    if (input.quantity !== undefined) updateValues.quantity = input.quantity;
-    if (input.unitCost !== undefined) updateValues.unitCost = input.unitCost.toString();
-    if (input.sellingPrice !== undefined) updateValues.sellingPrice = input.sellingPrice.toString();
-
-    // Update the inventory item
     const result = await db.update(inventoryItemsTable)
-      .set(updateValues)
+      .set(updateData)
       .where(eq(inventoryItemsTable.id, input.id))
       .returning()
       .execute();
 
-    // Convert numeric fields back to numbers before returning
-    const updatedItem = result[0];
+    if (result.length === 0) {
+      throw new Error('Inventory item not found');
+    }
+
+    const item = result[0];
     return {
-      ...updatedItem,
-      unitCost: parseFloat(updatedItem.unitCost),
-      sellingPrice: parseFloat(updatedItem.sellingPrice)
+      ...item,
+      unitCost: parseFloat(item.unitCost), // Convert string back to number
+      sellingPrice: parseFloat(item.sellingPrice), // Convert string back to number
+      created_at: new Date(item.created_at),
+      updated_at: new Date(item.updated_at)
     };
   } catch (error) {
     console.error('Inventory item update failed:', error);
+    // Handle unique constraint violation for SKU
+    if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint')) {
+      throw new Error('SKU already exists');
+    }
     throw error;
   }
 };

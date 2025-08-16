@@ -1,46 +1,45 @@
 import { db } from '../db';
 import { inventoryItemsTable } from '../db/schema';
-import { type InventoryReportInput, type InventorySummary } from '../schema';
-import { lte, sql } from 'drizzle-orm';
+import { lte } from 'drizzle-orm';
+import type { InventoryReportInput, InventorySummary, InventoryItem } from '../schema';
 
-export async function getInventorySummary(input: InventoryReportInput): Promise<InventorySummary> {
+export const getInventorySummary = async (input: InventoryReportInput): Promise<InventorySummary> => {
   try {
     // Get all inventory items
     const allItems = await db.select()
       .from(inventoryItemsTable)
       .execute();
 
-    // Calculate total items count
-    const totalItems = allItems.length;
-
-    // Calculate total inventory value (quantity * unitCost for each item)
-    const totalValue = allItems.reduce((sum, item) => {
-      const quantity = item.quantity;
-      const unitCost = parseFloat(item.unitCost); // Convert numeric to number
-      return sum + (quantity * unitCost);
-    }, 0);
-
-    // Find low stock items (quantity <= threshold)
+    // Get low stock items
     const lowStockItems = await db.select()
       .from(inventoryItemsTable)
       .where(lte(inventoryItemsTable.quantity, input.lowStockThreshold))
       .execute();
 
-    // Convert numeric fields to numbers for low stock items
-    const convertedLowStockItems = lowStockItems.map(item => ({
+    // Calculate total value
+    let totalValue = 0;
+    for (const item of allItems) {
+      const unitCost = parseFloat(item.unitCost);
+      totalValue += item.quantity * unitCost;
+    }
+
+    // Convert low stock items to proper format
+    const formattedLowStockItems: InventoryItem[] = lowStockItems.map(item => ({
       ...item,
       unitCost: parseFloat(item.unitCost),
-      sellingPrice: parseFloat(item.sellingPrice)
+      sellingPrice: parseFloat(item.sellingPrice),
+      created_at: new Date(item.created_at),
+      updated_at: new Date(item.updated_at)
     }));
 
     return {
-      totalItems,
+      totalItems: allItems.length,
       totalValue,
-      lowStockItems: convertedLowStockItems,
+      lowStockItems: formattedLowStockItems,
       lowStockThreshold: input.lowStockThreshold
     };
   } catch (error) {
     console.error('Inventory summary generation failed:', error);
     throw error;
   }
-}
+};
