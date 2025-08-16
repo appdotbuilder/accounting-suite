@@ -26,8 +26,8 @@ export const createInventoryItem = async (input: CreateInventoryItemInput): Prom
   } catch (error) {
     console.error('Inventory item creation failed:', error);
     // Handle unique constraint violation for SKU
-    if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint')) {
-      throw new Error(`SKU ${input.sku} already exists`);
+    if (error instanceof Error && error.message.includes('inventory_items_sku_unique')) {
+      throw new Error(`SKU '${input.sku}' already exists`);
     }
     throw error;
   }

@@ -54,7 +54,7 @@ const appRouter = router({
   
   deleteTransaction: publicProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deleteTransaction(input.id)),
+    .mutation(async ({ input }) => deleteTransaction(input.id)),
 
   // Inventory management routes
   createInventoryItem: publicProcedure
@@ -70,7 +70,7 @@ const appRouter = router({
   
   deleteInventoryItem: publicProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deleteInventoryItem(input.id)),
+    .mutation(async ({ input }) => deleteInventoryItem(input.id)),
 
   // Financial reporting routes
   getFinancialSummary: publicProcedure

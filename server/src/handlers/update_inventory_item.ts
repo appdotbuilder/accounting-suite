@@ -47,8 +47,8 @@ export const updateInventoryItem = async (input: UpdateInventoryItemInput): Prom
   } catch (error) {
     console.error('Inventory item update failed:', error);
     // Handle unique constraint violation for SKU
-    if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint')) {
-      throw new Error('SKU already exists');
+    if (error instanceof Error && error.message.includes('inventory_items_sku_unique')) {
+      throw new Error(`SKU already exists`);
     }
     throw error;
   }

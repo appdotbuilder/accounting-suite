@@ -7,7 +7,7 @@ export const getTransactions = async (): Promise<Transaction[]> => {
   try {
     const results = await db.select()
       .from(transactionsTable)
-      .orderBy(desc(transactionsTable.date), desc(transactionsTable.created_at))
+      .orderBy(desc(transactionsTable.date), desc(transactionsTable.id))
       .execute();
 
     return results.map(transaction => ({
